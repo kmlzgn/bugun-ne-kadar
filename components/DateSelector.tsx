@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import { getAvailableDates } from "@/services/inflationService";
 
 interface DateSelectorProps {
   year: string;
@@ -43,11 +43,22 @@ export function DateSelector({
   onMonthChange,
   disabled,
 }: DateSelectorProps) {
-  const monthId = React.useId();
-  const yearId = React.useId();
+  const monthId = crypto.randomUUID();
+  const yearId = crypto.randomUUID();
 
-  // Last complete year in dataset (2025)
-  const years = Array.from({ length: 2025 - 2003 + 1 }, (_, i) => 2025 - i);
+  // Derive available years and months from the actual CPI dataset
+  const availableDates = getAvailableDates();
+  const years = [...new Set(availableDates.map((d) => d.split("-")[0]))].sort(
+    (a, b) => Number(b) - Number(a)
+  );
+
+  // Filter months to only those present for the selected year
+  const availableMonths = year
+    ? availableDates
+        .filter((d) => d.startsWith(`${year}-`))
+        .map((d) => d.split("-")[1])
+        .sort()
+    : [];
 
   return (
     <div className="grid grid-cols-2 gap-3">
@@ -59,14 +70,15 @@ export function DateSelector({
           id={monthId}
           value={month}
           onChange={(e) => onMonthChange(e.target.value)}
-          disabled={disabled}
+          disabled={disabled || !year}
           aria-label="Ay seçin"
+          aria-required="true"
           className={selectClass}
         >
           <option value="" disabled>
             Ay
           </option>
-          {MONTHS.map((m) => (
+          {MONTHS.filter((m) => availableMonths.includes(m.value)).map((m) => (
             <option key={m.value} value={m.value}>
               {m.label}
             </option>
@@ -82,16 +94,20 @@ export function DateSelector({
         <select
           id={yearId}
           value={year}
-          onChange={(e) => onYearChange(e.target.value)}
+          onChange={(e) => {
+            onYearChange(e.target.value);
+            onMonthChange(""); // reset month when year changes
+          }}
           disabled={disabled}
           aria-label="Yıl seçin"
+          aria-required="true"
           className={selectClass}
         >
           <option value="" disabled>
             Yıl
           </option>
           {years.map((y) => (
-            <option key={y} value={String(y)}>
+            <option key={y} value={y}>
               {y}
             </option>
           ))}
@@ -105,7 +121,13 @@ export function DateSelector({
 function ChevronIcon() {
   return (
     <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        aria-hidden="true"
+      >
         <path
           d="M4 6l4 4 4-4"
           stroke="currentColor"

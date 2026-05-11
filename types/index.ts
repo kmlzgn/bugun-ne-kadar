@@ -1,3 +1,5 @@
+export type YYYYMM = string; // "2025-06" format only
+
 export interface CPIEntry {
   date: string;
   index: number;
@@ -18,14 +20,14 @@ export interface CPIDataset {
 export interface InflationResult {
   originalAmount: number;
   todayAmount: number;
-  originalDate: string;
-  todayDate: string;
+  originalDate: YYYYMM;
+  todayDate: YYYYMM;
   percentageIncrease: number;
   multiplier: number;
 }
 
 export interface ChartDataPoint {
-  date: string;
+  date: YYYYMM;
   value: number;
 }
 
@@ -37,4 +39,6 @@ export interface CalculatorFormState {
 
 export type CalculationResult =
   | { success: true; data: InflationResult }
-  | { success: false; error: string };
+  | { success: false; error: string; validRange?: { min: YYYYMM; max: YYYYMM } };
+
+export type NormalizedDate = YYYYMM;
